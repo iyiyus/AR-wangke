@@ -1,0 +1,18 @@
+server:
+  port: 8080
+  mode: debug
+
+database:
+  host: localhost
+  port: 3306
+  user: root
+  password: yuchen
+  dbname: wk
+  charset: utf8mb4
+
+jwt:
+  secret: wk-go-secret-2024
+  expire: 72h
+
+admin:
+  verify_password: "123456"

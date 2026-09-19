@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.exe
+*.exe~
+*.log
+install.lock
+.env
+uploads/

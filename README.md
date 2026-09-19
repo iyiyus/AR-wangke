@@ -69,23 +69,57 @@ GOOS=linux GOARCH=amd64 go build -o AR ./cmd
 └── uploads/        # 上传目录
 ```
 
-### Nginx 配置
+### Nginx 配置（完整版）
 
 ```nginx
-server {
+server
+{
     listen 80;
+    listen 443 ssl;
+    http2 on;
     server_name your.domain.com;
+    index index.html index.htm;
     root /www/wwwroot/your.domain.com/web;
 
+    # SSL 证书（宝塔申请后自动替换路径）
+    ssl_certificate    /www/server/panel/vhost/cert/你的域名/fullchain.pem;
+    ssl_certificate_key    /www/server/panel/vhost/cert/你的域名/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers EECDH+CHACHA20:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # HTTP 跳转 HTTPS
+    if ($server_port != 443) {
+        rewrite ^(/.*)$ https://$host$1 permanent;
+    }
+
+    # API 反代到后端
     location /api/ {
         proxy_pass http://127.0.0.1:8091;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 300s;
     }
+
+    # 上传文件反代
     location /uploads/ {
         proxy_pass http://127.0.0.1:8091;
+        proxy_set_header Host $host;
     }
+
+    # SPA 路由 fallback
     location / {
         try_files $uri $uri/ /index.html;
     }
+
+    access_log  /www/wwwlogs/your.domain.com.log;
+    error_log  /www/wwwlogs/your.domain.com.error.log;
 }
 ```
 
